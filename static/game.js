@@ -582,10 +582,24 @@ const Game = (() => {
   // ── Archetype Determination ────────────────
   function determineArchetype() {
     const s = state.stats;
-    for (const a of ARCHETYPES) {
-      if (a.check(s)) return a;
-    }
-    return ARCHETYPES[ARCHETYPES.length - 1]; // fallback
+    const spread = Math.max(...STAT_KEYS.map(key => s[key])) - Math.min(...STAT_KEYS.map(key => s[key]));
+    const scores = {
+      martyr:      s.knowledge * 2.2 - s.combat * 1.4 - s.luck * 0.8,
+      chaos:       s.combat * 2.5 - s.knowledge * 1.1 - s.social * 1.1,
+      shaman:      s.social * 1.4 + s.status * 1.5 + s.luck * 0.4 - s.knowledge * 1.0,
+      hoarder:     s.resources * 2.0 + s.luck * 0.4 - s.status * 0.9 - s.social * 0.9,
+      observer:    s.knowledge * 1.5 + s.luck * 1.3 - s.status * 0.9,
+      guardian:    s.knowledge * 1.5 + s.status * 1.5 + s.social * 0.5 - s.combat * 1.0,
+      predator:    s.combat * 1.4 + s.resources * 1.8 - s.knowledge * 1.0,
+      machiavelli: s.social * 1.5 + s.status * 1.5 + s.resources * 0.4 - s.luck * 0.3,
+      follower:    8 - spread + Math.min(s.social, s.status, s.knowledge) * 0.3
+    };
+
+    return ARCHETYPES.reduce((best, archetype) => {
+      const bestScore = scores[best.id] ?? -Infinity;
+      const score = scores[archetype.id] ?? -Infinity;
+      return score > bestScore ? archetype : best;
+    }, ARCHETYPES[ARCHETYPES.length - 1]);
   }
 
   // ── End Game ───────────────────────────────
