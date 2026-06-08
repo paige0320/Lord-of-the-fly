@@ -25,4 +25,5 @@ env/
 .vscode/
 .idea/
 static/media/bgm.mp3
+static/media/bgm.original.mp3
 static/media/Lord Of the Flies (youtube).mp3
