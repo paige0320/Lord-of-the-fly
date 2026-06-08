@@ -38,16 +38,18 @@ const Game = (() => {
   // ── Music ──────────────────────────────────
   function startMusic() {
     const bgm = document.getElementById('bgm');
+    const btn = document.getElementById('music-btn');
     bgm.volume = 0.35;
-    bgm.play().catch(() => {});
+    return bgm.play()
+      .then(() => btn.classList.remove('muted'))
+      .catch(() => btn.classList.add('muted'));
   }
 
   function toggleMusic() {
     const bgm = document.getElementById('bgm');
     const btn = document.getElementById('music-btn');
     if (bgm.paused) {
-      bgm.play();
-      btn.classList.remove('muted');
+      startMusic();
     } else {
       bgm.pause();
       btn.classList.add('muted');
