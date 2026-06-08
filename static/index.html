@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>蒼蠅王：微光與荒島之獸</title>
+  <link rel="stylesheet" href="style.css?v=14">
+</head>
+<body>
+
+<!-- ════════════════════════════════
+     SCREEN 1 — Welcome
+════════════════════════════════ -->
+<div id="screen-welcome" class="screen">
+  <!-- 背景氛圍影片（預留：建議用 16:9 循環短片，荒島/海浪/叢林） -->
+  <video id="welcome-video" class="welcome-bg-video" autoplay muted loop playsinline>
+    <source src="media/welcome-bg.mp4" type="video/mp4">
+  </video>
+  <div class="welcome-logo">蒼蠅王</div>
+  <div class="welcome-sub">Lord of the Flies ── 微光與荒島之獸</div>
+  <div class="welcome-divider"></div>
+  <p class="welcome-desc">
+    一架飛機墜落在無人的荒島上。<br>
+    沒有大人，只有你們——<br>
+    文明是表象，還是本質？<br>
+    人性本善，還是本惡？<br><br>
+    八個章節的抉擇，將揭露你真實的靈魂。
+  </p>
+
+  <button class="btn btn-primary" onclick="Game.startGame()">踏上荒島 →</button>
+</div>
+
+<!-- ════════════════════════════════
+     SCREEN 2 — Character Creation
+════════════════════════════════ -->
+<div id="screen-creation" class="screen">
+  <div class="creation-title">登島前的自我審視</div>
+  <div class="creation-sub">你是誰？在這座荒島上，你擁有什麼？</div>
+  <p class="creation-rule">請將下方 <strong>10 點</strong>分配到六項能力值<br>每項最多 <strong>5 點</strong>，全部分配完畢才能登島</p>
+  <div class="points-remaining">剩餘點數：<span id="points-left">10</span></div>
+
+  <div class="stats-grid" id="stats-grid">
+    <!-- rendered by JS -->
+  </div>
+
+  <button class="btn btn-primary" id="creation-confirm" onclick="Game.confirmCreation()" disabled>
+    登島，開始求生 →
+  </button>
+</div>
+
+<!-- ════════════════════════════════
+     SCREEN 3 — Game
+════════════════════════════════ -->
+<div id="screen-game" class="screen">
+  <!-- Stats HUD -->
+  <div class="stats-hud" id="stats-hud">
+    <div class="hud-chapter" id="hud-chapter">第 1 / 8 章</div>
+  </div>
+
+  <!-- VN content area -->
+  <div class="vn-content">
+    <img class="vn-bg" id="vn-bg" src="" alt="">
+    <div class="vn-bg-overlay"></div>
+
+    <img class="vn-char-center" id="vn-char-center" src="" alt="" style="display:none">
+
+    <div class="vn-panel">
+      <div class="vn-panel-label" id="vn-chapter-label"></div>
+
+      <div class="vn-speaker" id="vn-speaker"></div>
+      <div class="narrative-box" id="narrative-box"></div>
+
+      <div class="choice-point" id="choice-point"></div>
+
+      <div class="options-grid" id="options-grid"></div>
+
+      <div class="input-area" id="input-area">
+        <textarea id="player-input" placeholder="寫下你的選擇……（可以是任何行動、對話或想法）" rows="3"></textarea>
+        <div class="input-submit">
+          <button class="btn" onclick="Game.cancelInput()">取消</button>
+          <button class="btn btn-primary" onclick="Game.submitCustomInput()">送出選擇</button>
+        </div>
+      </div>
+
+      <div class="result-box" id="result-box">
+        <div class="result-label">── 結果 ──</div>
+        <div id="check-banner"></div>
+        <div class="result-text" id="result-text"></div>
+        <div class="stat-changes" id="stat-changes"></div>
+        <button class="btn btn-primary" id="continue-btn" onclick="Game.nextChapter()">繼續 →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     SCREEN 4 — Analysis
+════════════════════════════════ -->
+<div id="screen-analysis" class="screen">
+
+  <!-- Loading state -->
+  <div class="analysis-loading" id="analysis-loading">
+    <div class="analysis-loading-title">正在分析你的荒島靈魂…</div>
+    <div class="loading-spinner"></div>
+    <div style="color:var(--text-muted);font-size:0.82rem;margin-top:0.5rem;">
+      <span class="loading-dot">．</span><span class="loading-dot">．</span><span class="loading-dot">．</span>
+    </div>
+  </div>
+
+  <!-- Result -->
+  <div class="analysis-result" id="analysis-result">
+
+    <div class="archetype-banner" id="archetype-banner">
+      <!-- 人格原型圖（預留：9張，有圖才顯示） -->
+      <img id="archetype-img" class="archetype-img" src="" alt="" style="display:none">
+      <div class="archetype-symbol" id="archetype-symbol"></div>
+      <div class="archetype-name" id="archetype-name">守光者</div>
+      <div class="archetype-en" id="archetype-en">The Unyielding Light</div>
+    </div>
+
+    <div class="final-stats-grid" id="final-stats-grid">
+      <!-- rendered by JS -->
+    </div>
+
+    <div class="analysis-markdown" id="analysis-markdown">
+      <!-- rendered by JS -->
+    </div>
+
+    <div class="restart-area">
+      <button class="btn" onclick="Game.restart()">重新踏上荒島</button>
+    </div>
+
+  </div>
+</div>
+
+<audio id="bgm" loop src="media/bgm.mp3" preload="auto"></audio>
+<button id="music-btn" class="music-btn" onclick="Game.toggleMusic()" title="音樂開關">♪</button>
+
+<script src="story.js?v=15"></script>
+<script src="game.js?v=20"></script>
+</body>
+</html>
