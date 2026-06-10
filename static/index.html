@@ -27,6 +27,12 @@
     八個章節的抉擇，將揭露你真實的靈魂。
   </p>
 
+  <div class="api-box">
+    <label for="gemini-api-key">Gemini API Key（選填）</label>
+    <input id="gemini-api-key" type="password" autocomplete="off" placeholder="留空則使用本地規則判定">
+    <div class="api-hint">Key 只儲存在此瀏覽器，用於自由輸入選項的 AI 判定。</div>
+  </div>
+
   <button class="btn btn-primary" onclick="Game.startGame()">踏上荒島 →</button>
 </div>
 
@@ -137,6 +143,6 @@
 <button id="music-btn" class="music-btn muted" onclick="Game.toggleMusic()" title="音樂開關">♪</button>
 
 <script src="story.js?v=15"></script>
-<script src="game.js?v=22"></script>
+<script src="game.js?v=23"></script>
 </body>
 </html>

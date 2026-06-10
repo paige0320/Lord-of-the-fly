@@ -3,6 +3,8 @@
 // ═══════════════════════════════════════════════
 
 const Game = (() => {
+  const API_KEY_STORAGE = 'lordOfFliesGeminiApiKey';
+  const GEMINI_MODEL = 'gemini-2.5-flash-lite';
 
   // ── State ──────────────────────────────────
   let state = {
@@ -35,6 +37,26 @@ const Game = (() => {
     return Math.max(min, Math.min(max, v));
   }
 
+  function getApiKey() {
+    const input = document.getElementById('gemini-api-key');
+    return (input && input.value.trim()) || localStorage.getItem(API_KEY_STORAGE) || '';
+  }
+
+  function saveApiKey() {
+    const input = document.getElementById('gemini-api-key');
+    if (!input) return;
+    const key = input.value.trim();
+    if (key) localStorage.setItem(API_KEY_STORAGE, key);
+    else localStorage.removeItem(API_KEY_STORAGE);
+  }
+
+  function initApiKeyField() {
+    const input = document.getElementById('gemini-api-key');
+    if (!input) return;
+    input.value = localStorage.getItem(API_KEY_STORAGE) || '';
+    input.addEventListener('change', saveApiKey);
+  }
+
   // ── Music ──────────────────────────────────
   function startMusic() {
     const bgm = document.getElementById('bgm');
@@ -58,6 +80,7 @@ const Game = (() => {
 
   // ── Screen 1: Welcome ─────────────────────
   function startGame() {
+    saveApiKey();
     startMusic();
     initCreation();
     show('screen-creation');
@@ -417,7 +440,7 @@ const Game = (() => {
     document.querySelectorAll('.option-block').forEach(b => { b.style.opacity = ''; });
   }
 
-  function submitCustomInput() {
+  async function submitCustomInput() {
     const inputEl = document.getElementById('player-input');
     const text = inputEl.value.trim();
     if (!text) { showError('請輸入你的選擇'); return; }
@@ -428,7 +451,7 @@ const Game = (() => {
     const ch = CHAPTERS[state.chapterIndex];
     const opt = state.pendingInputOption;
 
-    const { changes, result } = localJudge(text);
+    const { changes, result } = await judgeChoice(text);
 
     const ia = document.getElementById('input-area');
     ia.style.display = 'none';
@@ -440,6 +463,77 @@ const Game = (() => {
     showResult(result, changes, null);
     logChoice(ch, `自由輸入：「${text.slice(0, 30)}${text.length > 30 ? '…' : ''}」`);
     state.processingInput = false;
+  }
+
+  async function judgeChoice(text) {
+    const apiKey = getApiKey();
+    if (!apiKey) return localJudge(text);
+
+    try {
+      return await geminiJudge(text, apiKey);
+    } catch (err) {
+      console.warn('Gemini judge failed, falling back to local rules:', err);
+      showError('AI 判定暫時不可用，已改用本地規則');
+      return localJudge(text);
+    }
+  }
+
+  async function geminiJudge(text, apiKey) {
+    const prompt = [
+      '你是文字冒險遊戲《蒼蠅王：微光與荒島之獸》的選擇判定器。',
+      '請根據玩家自由輸入的行動，判定六項能力值變化，並生成一句繁體中文結果描述。',
+      '能力值 key 只能使用：luck, combat, knowledge, social, resources, status。',
+      '每個變化值必須是 -2 到 2 的整數；只輸出有變化的 key。',
+      '結果描述需符合荒島、文明崩解、人性抉擇的語氣，長度 35 到 70 字。',
+      '請只回傳 JSON，不要 markdown，不要額外說明。',
+      '格式：{"changes":{"knowledge":1,"social":-1},"result":"..."}',
+      `玩家行動：${text}`
+    ].join('\n');
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.45,
+            responseMimeType: 'application/json'
+          }
+        })
+      }
+    );
+
+    if (!response.ok) throw new Error(`Gemini HTTP ${response.status}`);
+    const data = await response.json();
+    const raw = data.candidates?.[0]?.content?.parts?.map(part => part.text || '').join('\n').trim();
+    if (!raw) throw new Error('Empty Gemini response');
+    return normalizeGeminiResult(JSON.parse(extractJson(raw)));
+  }
+
+  function extractJson(text) {
+    const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    if (fenced) return fenced[1].trim();
+    const start = text.indexOf('{');
+    const end = text.lastIndexOf('}');
+    if (start >= 0 && end > start) return text.slice(start, end + 1);
+    return text;
+  }
+
+  function normalizeGeminiResult(value) {
+    if (!value || typeof value !== 'object') throw new Error('Invalid Gemini result');
+    const changes = {};
+    Object.entries(value.changes || {}).forEach(([key, delta]) => {
+      if (!STAT_KEYS.includes(key)) return;
+      const parsed = Number(delta);
+      if (!Number.isFinite(parsed) || parsed === 0) return;
+      changes[key] = Math.max(-2, Math.min(2, Math.round(parsed)));
+    });
+    if (!Object.keys(changes).length) throw new Error('Gemini result has no stat changes');
+    const result = String(value.result || '').trim();
+    if (!result) throw new Error('Gemini result has no text');
+    return { changes, result };
   }
 
   function localJudge(text) {
@@ -718,7 +812,8 @@ const Game = (() => {
     submitCustomInput,
     nextChapter,
     restart,
-    toggleMusic
+    toggleMusic,
+    initApiKeyField
   };
 
 })();
@@ -726,6 +821,7 @@ const Game = (() => {
 // Show welcome screen on load
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('screen-welcome').classList.add('active');
+  Game.initApiKeyField && Game.initApiKeyField();
 });
 
 // Spacebar advances dialogue
